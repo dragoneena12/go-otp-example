@@ -1,11 +1,13 @@
 package main
 
 import (
+	"crypto/rand"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 
+	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 
 	"image/png"
@@ -13,8 +15,14 @@ import (
 
 func main() {
 	key, err := totp.Generate(totp.GenerateOpts{
-		Issuer:      "Example.com",
-		AccountName: "alice@example.com",
+		Issuer:      "Example.com",       // OTPを発行する組織・企業名。必須。
+		AccountName: "alice@example.com", // OTP発行先のアカウント名。必須。
+		Period:      30,                  // TOTPハッシュが有効な時間（秒）。デフォルトでは30秒。
+		SecretSize:  20,                  // 生成されるSecretのバイト長。デフォルトでは20バイト。
+		Secret:      []byte{},            // Secretとして用いるバイト列。デフォルトではempty。
+		Digits:      otp.DigitsSix,       // 生成されるTOTPハッシュの桁数。デフォルトでは6桁。
+		Algorithm:   otp.AlgorithmSHA1,   // HMACに用いるハッシュアルゴリズム。デフォルトではSHA1。
+		Rand:        rand.Reader,         // Secret生成に用いる乱数生成io.Reader。デフォルトではrand.Reader。
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -48,7 +56,7 @@ func main() {
 	if valid {
 		// User successfully used their TOTP, save it to your backend!
 		fmt.Println("Authorization succeed!")
-		err := ioutil.WriteFile("hoge.txt", []byte(key.Secret()), 0664)
+		err := ioutil.WriteFile("secret.key", []byte(key.Secret()), 0600)
 		if err != nil {
 			log.Fatal(err)
 		}
